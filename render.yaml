@@ -2,7 +2,6 @@ services:
   - type: web
     name: gps-survey-accuracy
     runtime: static
-    plan: free
     buildCommand: bash render-build.sh
     staticPublishPath: ./dist
     branch: main
