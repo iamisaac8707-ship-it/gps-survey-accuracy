@@ -151,7 +151,7 @@
 
     handleDeleteMeasurement(id) {
       if (!this.model.canDeleteMeasurements()) {
-        this.view.showAlert("Supabase 공유 저장 모드에서는 앱에서 직접 삭제하지 않습니다. 삭제는 Supabase 대시보드에서 관리하세요.");
+        this.view.showAlert("외부 공유 저장 모드에서는 앱에서 직접 삭제하지 않습니다. 삭제는 연결된 저장소에서 관리하세요.");
         return;
       }
 
@@ -195,6 +195,7 @@
     renderMeasurements() {
       this.view.renderMeasurements(this.getSortedMeasurements(), this.sortState, {
         canDelete: this.model.canDeleteMeasurements(),
+        storageLabel: this.model.persistenceMode === "sheets" ? "시트 보관" : "DB 보관",
       });
     }
 

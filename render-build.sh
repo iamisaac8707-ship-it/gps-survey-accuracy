@@ -21,4 +21,5 @@ replace_config() {
 replace_config "KAKAO_MAP_API_KEY" "${KAKAO_MAP_API_KEY:-}"
 replace_config "SUPABASE_URL" "${SUPABASE_URL:-}"
 replace_config "SUPABASE_PUBLISHABLE_KEY" "${SUPABASE_PUBLISHABLE_KEY:-${SUPABASE_ANON_KEY:-}}"
+replace_config "GOOGLE_SHEETS_WEB_APP_URL" "${GOOGLE_SHEETS_WEB_APP_URL:-}"
 replace_config "SURVEY_SESSION_CODE" "${SURVEY_SESSION_CODE:-}"

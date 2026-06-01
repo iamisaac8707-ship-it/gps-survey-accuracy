@@ -30,5 +30,7 @@ services:
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY
         sync: false
+      - key: GOOGLE_SHEETS_WEB_APP_URL
+        sync: false
       - key: SURVEY_SESSION_CODE
         value: default

@@ -302,7 +302,7 @@
     }
 
     renderSyncStatus(status) {
-      this.syncStatus.classList.toggle("is-online", status.mode === "supabase");
+      this.syncStatus.classList.toggle("is-online", status.mode === "supabase" || status.mode === "sheets");
       this.syncStatus.classList.toggle("is-error", status.mode === "error");
       this.syncStatus.querySelector("span:last-child").textContent = status.label;
       this.syncStatus.title = status.detail || "";
@@ -341,7 +341,7 @@
                     ? `<button class="icon-button" type="button" data-action="delete" data-id="${item.id}" aria-label="측정 데이터 삭제">
                         <i data-lucide="trash-2" aria-hidden="true"></i>
                       </button>`
-                    : '<span class="read-only-chip">DB 보관</span>'
+                    : `<span class="read-only-chip">${options.storageLabel || "외부 보관"}</span>`
                 }
               </td>
             </tr>

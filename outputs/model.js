@@ -32,8 +32,9 @@
       this.clientIdStorageKey = `${storageKey}.clientId`;
       this.clientId = this.getOrCreateClientId();
       this.sessionCode = window.SURVEY_SESSION_CODE || "default";
+      this.googleSheetsUrl = window.GOOGLE_SHEETS_WEB_APP_URL || "";
       this.supabaseClient = this.createSupabaseClient();
-      this.persistenceMode = this.supabaseClient ? "supabase" : "local";
+      this.persistenceMode = this.googleSheetsUrl ? "sheets" : this.supabaseClient ? "supabase" : "local";
       this.persistenceError = null;
       this.currentLocation = null;
       this.gpsAccuracy = null;
@@ -71,6 +72,10 @@
     }
 
     async initializePersistence() {
+      if (this.googleSheetsUrl) {
+        return this.getPersistenceStatus();
+      }
+
       if (!this.supabaseClient) {
         return this.getPersistenceStatus();
       }
@@ -163,6 +168,15 @@
     async saveMeasurement(input) {
       const measurement = this.createMeasurement(input);
 
+      if (this.googleSheetsUrl) {
+        await this.sendToGoogleSheets(measurement);
+        this.persistenceMode = "sheets";
+        this.persistenceError = null;
+        this.measurements.push(measurement);
+        this.persistMeasurements();
+        return measurement;
+      }
+
       if (this.supabaseClient) {
         const { data, error } = await this.supabaseClient
           .from("survey_measurements")
@@ -216,7 +230,7 @@
     }
 
     canDeleteMeasurements() {
-      return this.persistenceMode !== "supabase";
+      return this.persistenceMode !== "supabase" && this.persistenceMode !== "sheets";
     }
 
     getPersistenceStatus() {
@@ -224,6 +238,14 @@
         return {
           mode: "supabase",
           label: "Supabase 연결됨",
+          detail: `세션: ${this.sessionCode}`,
+        };
+      }
+
+      if (this.persistenceMode === "sheets") {
+        return {
+          mode: "sheets",
+          label: "Google Sheets 연결됨",
           detail: `세션: ${this.sessionCode}`,
         };
       }
@@ -261,6 +283,41 @@
         gps_accuracy_m: measurement.gpsAccuracy,
         recorded_at: measurement.timestamp,
       };
+    }
+
+    async sendToGoogleSheets(measurement) {
+      const payload = {
+        sessionCode: this.sessionCode,
+        clientId: this.clientId,
+        clientMeasurementId: measurement.id,
+        timestamp: measurement.timestamp,
+        startLat: measurement.startLocation.lat,
+        startLng: measurement.startLocation.lng,
+        endLat: measurement.endLocation.lat,
+        endLng: measurement.endLocation.lng,
+        gpsDistance: measurement.gpsDistance,
+        actualDistance: measurement.actualDistance,
+        absoluteError: measurement.absoluteError,
+        relativeError: measurement.relativeError,
+        environment: measurement.environment,
+        environmentKey: measurement.environmentKey,
+        gpsAccuracy: measurement.gpsAccuracy,
+      };
+
+      try {
+        await fetch(this.googleSheetsUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify(payload),
+        });
+      } catch (error) {
+        this.persistenceMode = "error";
+        this.persistenceError = error.message;
+        throw new Error(`Google Sheets 저장 실패: ${error.message}`);
+      }
     }
 
     fromSupabaseRow(row) {
