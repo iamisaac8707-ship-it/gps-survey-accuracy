@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPS 측량 오차 분석</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+
+    <script>
+      // 카카오맵 API 키 입력 위치:
+      // 아래 빈 문자열에 카카오 개발자센터에서 발급받은 JavaScript 키를 넣으면 실제 지도가 로드됩니다.
+      window.KAKAO_MAP_API_KEY = "";
+    </script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="app-label">측량 수업 실험 도구</p>
+          <h1>GPS 측량 오차 분석</h1>
+        </div>
+        <div class="header-status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="locationStatus">현재 위치 확인 중</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="workspace-grid" aria-label="측량 측정 작업 영역">
+          <div class="panel map-panel">
+            <div class="panel-heading map-heading">
+              <div>
+                <span class="section-kicker">Map Area</span>
+                <h2>현재 위치와 목적지</h2>
+              </div>
+              <div id="mapStatus" class="map-status">지도 준비 중</div>
+            </div>
+            <div class="map-frame">
+              <div id="map" class="map-canvas" role="application" aria-label="측정 지도"></div>
+              <div id="gpsAccuracy" class="accuracy-badge">현재 GPS 정확도: 확인 중</div>
+            </div>
+            <div class="map-readout" aria-live="polite">
+              <div>
+                <span>현재 좌표</span>
+                <strong id="currentLocationText">-</strong>
+              </div>
+              <div>
+                <span>목적지 좌표</span>
+                <strong id="endLocationText">-</strong>
+              </div>
+              <div>
+                <span>GPS 직선거리</span>
+                <strong id="gpsDistanceText">-</strong>
+              </div>
+            </div>
+          </div>
+
+          <aside class="panel control-panel" aria-label="측정 입력 패널">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Control</span>
+                <h2>측정 입력</h2>
+              </div>
+            </div>
+
+            <button id="refreshLocationBtn" class="button button-secondary" type="button">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              <span>현재 위치 새로고침</span>
+            </button>
+
+            <div class="metric-stack">
+              <div class="metric">
+                <span>GPS 거리</span>
+                <strong id="distanceMetric">-</strong>
+              </div>
+              <div class="metric metric-muted">
+                <span>저장된 측정</span>
+                <strong id="countMetric">0건</strong>
+              </div>
+            </div>
+
+            <form id="measurementForm" class="measurement-form">
+              <label class="field">
+                <span>실제 측량값 (m)</span>
+                <input
+                  id="actualDistanceInput"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  inputmode="decimal"
+                  placeholder="예: 35.42"
+                />
+              </label>
+
+              <label class="field">
+                <span>주변 환경</span>
+                <select id="environmentSelect"></select>
+              </label>
+
+              <div class="button-row">
+                <button id="saveMeasurementBtn" class="button button-primary" type="submit">
+                  <i data-lucide="save" aria-hidden="true"></i>
+                  <span>측정 데이터 저장</span>
+                </button>
+                <button id="downloadCsvBtn" class="button button-secondary" type="button">
+                  <i data-lucide="download" aria-hidden="true"></i>
+                  <span>CSV 파일 다운로드</span>
+                </button>
+              </div>
+            </form>
+
+            <div class="summary-strip">
+              <div>
+                <span>평균 상대 오차</span>
+                <strong id="avgRelativeMetric">-</strong>
+              </div>
+              <div>
+                <span>최대 절대 오차</span>
+                <strong id="maxAbsoluteMetric">-</strong>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="panel table-panel" aria-label="저장된 측정 데이터">
+          <div class="panel-heading table-heading">
+            <div>
+              <span class="section-kicker">Data Table</span>
+              <h2>측정 데이터 리스트</h2>
+            </div>
+            <span id="sortStatus" class="sort-status">최신순 정렬</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th><button type="button" class="sort-button" data-sort="timestamp">일시</button></th>
+                  <th><button type="button" class="sort-button" data-sort="environment">환경</button></th>
+                  <th><button type="button" class="sort-button" data-sort="gpsDistance">GPS 거리(m)</button></th>
+                  <th><button type="button" class="sort-button" data-sort="actualDistance">실측값(m)</button></th>
+                  <th><button type="button" class="sort-button" data-sort="absoluteError">절대 오차(m)</button></th>
+                  <th><button type="button" class="sort-button" data-sort="relativeError">상대 오차(%)</button></th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="measurementTableBody">
+                <tr>
+                  <td colspan="7" class="empty-cell">저장된 측정 데이터가 없습니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="analytics-grid" aria-label="오차 분석 차트">
+          <div class="panel chart-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Chart 1</span>
+                <h2>오차율 분포</h2>
+              </div>
+            </div>
+            <div class="chart-box">
+              <canvas id="relativeErrorChart" aria-label="측정 횟수별 상대 오차율 차트"></canvas>
+            </div>
+          </div>
+
+          <div class="panel chart-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Chart 2</span>
+                <h2>환경별 평균 오차</h2>
+              </div>
+            </div>
+            <div class="chart-box">
+              <canvas id="environmentErrorChart" aria-label="환경별 평균 절대 오차 차트"></canvas>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./model.js" defer></script>
+    <script src="./view.js" defer></script>
+    <script src="./controller.js" defer></script>
+  </body>
+</html>

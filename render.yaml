@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: gps-survey-accuracy
+    runtime: static
+    plan: free
+    buildCommand: bash render-build.sh
+    staticPublishPath: ./dist
+    branch: main
+    autoDeploy: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /*.css
+        name: Cache-Control
+        value: public, max-age=86400
+      - path: /*.js
+        name: Cache-Control
+        value: public, max-age=86400
+    envVars:
+      - key: KAKAO_MAP_API_KEY
+        sync: false
