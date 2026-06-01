@@ -384,58 +384,117 @@ select:focus {
 
 .point-picker {
   display: grid;
-  gap: 8px;
-  padding-top: 2px;
+  gap: 10px;
+}
+
+.route-board {
+  padding: 12px;
+  border: 1px solid rgba(15, 159, 143, 0.18);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(232, 248, 245, 0.9), #ffffff);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+
+.route-board-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.route-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border: 1px solid rgba(15, 159, 143, 0.24);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .step-flow {
+  display: grid;
+}
+
+.route-points {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.step-flow span {
-  display: inline-flex;
+.route-points button {
+  display: flex;
   align-items: center;
-  gap: 7px;
-  min-height: 34px;
-  padding: 7px 9px;
-  border: 1px dashed var(--border-strong);
+  gap: 10px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #ffffff;
+  color: var(--muted);
+  text-align: left;
+  box-shadow: 0 10px 20px rgba(31, 42, 50, 0.05);
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.route-points button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(15, 159, 143, 0.34);
+}
+
+.route-points button.is-active {
+  border-color: rgba(15, 159, 143, 0.72);
+  background: #eefcf8;
+  color: var(--accent-dark);
+  box-shadow: inset 0 0 0 1px rgba(15, 159, 143, 0.16), 0 12px 24px rgba(15, 159, 143, 0.1);
+}
+
+.route-points button.is-done {
+  border-color: rgba(15, 159, 143, 0.34);
+  color: var(--accent-dark);
+}
+
+.step-number {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-soft);
   color: var(--muted);
   font-size: 12px;
   font-weight: 900;
 }
 
-.step-flow strong {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--surface-soft);
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.step-flow span.is-active {
-  border-style: solid;
-  border-color: rgba(15, 159, 143, 0.55);
-  background: var(--accent-soft);
-  color: var(--accent-dark);
-}
-
-.step-flow span.is-active strong,
-.step-flow span.is-done strong {
+.route-points button.is-active .step-number,
+.route-points button.is-done .step-number {
   background: var(--accent);
   color: #ffffff;
 }
 
-.step-flow span.is-done {
-  border-style: solid;
-  border-color: rgba(15, 159, 143, 0.28);
-  color: var(--accent-dark);
+.route-point-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.route-point-copy strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.route-point-copy small {
+  color: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  opacity: 0.72;
 }
 
 .mode-help {

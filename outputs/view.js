@@ -71,6 +71,7 @@
       this.mapMode = "pending";
       this.destinationHandler = null;
       this.fallbackCenterLocation = DEFAULT_LOCATION;
+      this.lastKakaoMapEventAt = 0;
       this.relativeErrorChart = null;
       this.environmentErrorChart = null;
     }
@@ -187,6 +188,8 @@
       });
 
       window.kakao.maps.event.addListener(this.kakaoMap, "click", (mouseEvent) => {
+        if (!this.destinationHandler) return;
+        this.lastKakaoMapEventAt = Date.now();
         const latLng = mouseEvent.latLng;
         this.destinationHandler({
           lat: latLng.getLat(),
@@ -194,8 +197,45 @@
         });
       });
 
+      this.mapElement.addEventListener(
+        "click",
+        (event) => {
+          if (this.mapMode !== "kakao" || !this.kakaoMap) return;
+          if (!this.destinationHandler) return;
+          if (Date.now() - this.lastKakaoMapEventAt < 250) return;
+
+          const latLng = this.getKakaoLatLngFromClick(event);
+          if (!latLng) return;
+
+          this.destinationHandler({
+            lat: latLng.getLat(),
+            lng: latLng.getLng(),
+          });
+        },
+        true
+      );
+
       this.mapMode = "kakao";
       this.mapStatus.textContent = "카카오맵 연결됨";
+      setTimeout(() => this.kakaoMap.relayout(), 0);
+    }
+
+    getKakaoLatLngFromClick(event) {
+      if (!window.kakao?.maps?.Point || !this.kakaoMap?.getProjection) return null;
+
+      const rect = this.mapElement.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+
+      const point = new window.kakao.maps.Point(event.clientX - rect.left, event.clientY - rect.top);
+      const projection = this.kakaoMap.getProjection();
+      if (!projection?.coordsFromContainerPoint) return null;
+
+      try {
+        return projection.coordsFromContainerPoint(point);
+      } catch (error) {
+        console.warn("카카오맵 클릭 좌표 변환 실패:", error);
+        return null;
+      }
     }
 
     setupFallbackMap() {

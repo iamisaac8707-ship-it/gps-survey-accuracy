@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GPS 측량 오차 분석</title>
-    <link rel="stylesheet" href="./style.css?v=20260601-two-point-ui2" />
+    <link rel="stylesheet" href="./style.css?v=20260601-two-point-ui3" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
@@ -101,21 +101,28 @@
                 </button>
               </div>
 
-              <div id="pointPicker" class="point-picker is-hidden">
-                <span class="field-label">지도 클릭 대상</span>
-                <div id="pointTargetGroup" class="segmented-control" role="group" aria-label="지도 클릭 대상">
-                  <button type="button" data-point="start" class="is-active">
-                    <i data-lucide="flag" aria-hidden="true"></i>
-                    <span>시작점</span>
-                  </button>
-                  <button type="button" data-point="end">
-                    <i data-lucide="map-pin" aria-hidden="true"></i>
-                    <span>측정점</span>
-                  </button>
+              <div id="pointPicker" class="point-picker route-board is-hidden">
+                <div class="route-board-top">
+                  <span class="field-label">두 지점 선택</span>
+                  <span class="route-mode-chip">지도 클릭으로 자동 진행</span>
                 </div>
                 <div id="manualStepFlow" class="step-flow" aria-label="두 지점 선택 순서">
-                  <span data-step="start" class="is-active"><strong>1</strong> 시작점 클릭</span>
-                  <span data-step="end"><strong>2</strong> 측정점 클릭</span>
+                  <div id="pointTargetGroup" class="route-points" role="group" aria-label="지도 클릭 대상">
+                    <button type="button" data-point="start" data-step="start" class="is-active">
+                      <span class="step-number">1</span>
+                      <span class="route-point-copy">
+                        <strong>시작점</strong>
+                        <small>첫 번째로 찍을 위치</small>
+                      </span>
+                    </button>
+                    <button type="button" data-point="end" data-step="end">
+                      <span class="step-number">2</span>
+                      <span class="route-point-copy">
+                        <strong>측정점</strong>
+                        <small>두 번째로 찍을 위치</small>
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
               <p id="modeHelpText" class="mode-help">지도를 클릭하면 현재 위치에서 측정점까지의 거리를 계산합니다.</p>
@@ -233,8 +240,8 @@
       </main>
     </div>
 
-    <script src="./model.js?v=20260601-two-point-ui2" defer></script>
-    <script src="./view.js?v=20260601-two-point-ui2" defer></script>
-    <script src="./controller.js?v=20260601-two-point-ui2" defer></script>
+    <script src="./model.js?v=20260601-two-point-ui3" defer></script>
+    <script src="./view.js?v=20260601-two-point-ui3" defer></script>
+    <script src="./controller.js?v=20260601-two-point-ui3" defer></script>
   </body>
 </html>
