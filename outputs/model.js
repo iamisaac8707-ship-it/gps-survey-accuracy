@@ -29,11 +29,53 @@
   class MeasurementModel {
     constructor(storageKey = STORAGE_KEY) {
       this.storageKey = storageKey;
+      this.clientIdStorageKey = `${storageKey}.clientId`;
+      this.clientId = this.getOrCreateClientId();
+      this.sessionCode = window.SURVEY_SESSION_CODE || "default";
+      this.supabaseClient = this.createSupabaseClient();
+      this.persistenceMode = this.supabaseClient ? "supabase" : "local";
+      this.persistenceError = null;
       this.currentLocation = null;
       this.gpsAccuracy = null;
       this.endLocation = null;
       this.gpsDistance = null;
       this.measurements = this.loadMeasurements();
+    }
+
+    getOrCreateClientId() {
+      const existing = localStorage.getItem(this.clientIdStorageKey);
+      if (existing) return existing;
+
+      const clientId =
+        window.crypto?.randomUUID?.() ||
+        `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      localStorage.setItem(this.clientIdStorageKey, clientId);
+      return clientId;
+    }
+
+    createSupabaseClient() {
+      const url = window.SUPABASE_URL;
+      const key = window.SUPABASE_PUBLISHABLE_KEY;
+
+      if (!url || !key || !window.supabase?.createClient) {
+        return null;
+      }
+
+      return window.supabase.createClient(url, key, {
+        global: {
+          headers: {
+            "x-client-id": this.clientId,
+          },
+        },
+      });
+    }
+
+    async initializePersistence() {
+      if (!this.supabaseClient) {
+        return this.getPersistenceStatus();
+      }
+
+      return this.fetchRemoteMeasurements();
     }
 
     setCurrentLocation(location) {
@@ -118,17 +160,133 @@
       };
     }
 
-    saveMeasurement(input) {
+    async saveMeasurement(input) {
       const measurement = this.createMeasurement(input);
+
+      if (this.supabaseClient) {
+        const { data, error } = await this.supabaseClient
+          .from("survey_measurements")
+          .insert(this.toSupabaseRow(measurement))
+          .select()
+          .single();
+
+        if (error) {
+          this.persistenceMode = "error";
+          this.persistenceError = error.message;
+          throw new Error(`Supabase 저장 실패: ${error.message}`);
+        }
+
+        this.persistenceMode = "supabase";
+        this.persistenceError = null;
+        this.measurements.push(this.fromSupabaseRow(data));
+        return measurement;
+      }
+
       this.measurements.push(measurement);
       this.persistMeasurements();
       return measurement;
     }
 
     deleteMeasurement(id) {
-      const numericId = Number(id);
-      this.measurements = this.measurements.filter((item) => item.id !== numericId);
+      this.measurements = this.measurements.filter((item) => String(item.id) !== String(id));
       this.persistMeasurements();
+    }
+
+    async fetchRemoteMeasurements() {
+      if (!this.supabaseClient) {
+        return this.getPersistenceStatus();
+      }
+
+      const { data, error } = await this.supabaseClient
+        .from("survey_measurements")
+        .select("*")
+        .eq("session_code", this.sessionCode)
+        .order("recorded_at", { ascending: true });
+
+      if (error) {
+        this.persistenceMode = "error";
+        this.persistenceError = error.message;
+        return this.getPersistenceStatus();
+      }
+
+      this.measurements = data.map((row) => this.fromSupabaseRow(row));
+      this.persistenceMode = "supabase";
+      this.persistenceError = null;
+      return this.getPersistenceStatus();
+    }
+
+    canDeleteMeasurements() {
+      return this.persistenceMode !== "supabase";
+    }
+
+    getPersistenceStatus() {
+      if (this.persistenceMode === "supabase") {
+        return {
+          mode: "supabase",
+          label: "Supabase 연결됨",
+          detail: `세션: ${this.sessionCode}`,
+        };
+      }
+
+      if (this.persistenceMode === "error") {
+        return {
+          mode: "error",
+          label: "DB 연결 오류",
+          detail: this.persistenceError,
+        };
+      }
+
+      return {
+        mode: "local",
+        label: "로컬 저장소",
+        detail: "Supabase 미설정",
+      };
+    }
+
+    toSupabaseRow(measurement) {
+      return {
+        session_code: this.sessionCode,
+        client_id: this.clientId,
+        client_measurement_id: measurement.id,
+        start_lat: measurement.startLocation.lat,
+        start_lng: measurement.startLocation.lng,
+        end_lat: measurement.endLocation.lat,
+        end_lng: measurement.endLocation.lng,
+        gps_distance_m: measurement.gpsDistance,
+        actual_distance_m: measurement.actualDistance,
+        absolute_error_m: measurement.absoluteError,
+        relative_error_percent: measurement.relativeError,
+        environment: measurement.environment,
+        environment_key: measurement.environmentKey,
+        gps_accuracy_m: measurement.gpsAccuracy,
+        recorded_at: measurement.timestamp,
+      };
+    }
+
+    fromSupabaseRow(row) {
+      return {
+        id: row.id,
+        startLocation: {
+          lat: Number(row.start_lat),
+          lng: Number(row.start_lng),
+        },
+        endLocation: {
+          lat: Number(row.end_lat),
+          lng: Number(row.end_lng),
+        },
+        gpsDistance: roundToTwo(Number(row.gps_distance_m)),
+        actualDistance: roundToTwo(Number(row.actual_distance_m)),
+        absoluteError: roundToTwo(Number(row.absolute_error_m)),
+        relativeError: roundToTwo(Number(row.relative_error_percent)),
+        environment: row.environment,
+        environmentKey: row.environment_key,
+        gpsAccuracy:
+          row.gps_accuracy_m === null || row.gps_accuracy_m === undefined
+            ? null
+            : roundToTwo(Number(row.gps_accuracy_m)),
+        timestamp: row.recorded_at || row.created_at,
+        source: "supabase",
+      };
     }
 
     loadMeasurements() {

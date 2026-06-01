@@ -28,6 +28,8 @@
       this.view.renderEnvironmentOptions(window.MeasurementConstants.ENVIRONMENTS);
       this.bindEvents();
       await this.view.initMap((location) => this.handleDestinationSelect(location));
+      const persistenceStatus = await this.model.initializePersistence();
+      this.view.renderSyncStatus(persistenceStatus);
       this.renderAll();
       this.requestCurrentLocation();
       this.startLocationWatch();
@@ -113,7 +115,7 @@
       this.updateLocationViews();
     }
 
-    handleSaveMeasurement() {
+    async handleSaveMeasurement() {
       const formData = this.view.getFormData();
 
       if (!this.model.endLocation) {
@@ -127,10 +129,12 @@
       }
 
       try {
-        this.model.saveMeasurement(formData);
+        await this.model.saveMeasurement(formData);
         this.view.resetFormAfterSave();
+        this.view.renderSyncStatus(this.model.getPersistenceStatus());
         this.renderAll();
       } catch (error) {
+        this.view.renderSyncStatus(this.model.getPersistenceStatus());
         this.view.showAlert(error.message);
       }
     }
@@ -146,6 +150,11 @@
     }
 
     handleDeleteMeasurement(id) {
+      if (!this.model.canDeleteMeasurements()) {
+        this.view.showAlert("Supabase 공유 저장 모드에서는 앱에서 직접 삭제하지 않습니다. 삭제는 Supabase 대시보드에서 관리하세요.");
+        return;
+      }
+
       const shouldDelete = window.confirm("이 측정 데이터를 삭제할까요?");
       if (!shouldDelete) return;
 
@@ -184,7 +193,9 @@
     }
 
     renderMeasurements() {
-      this.view.renderMeasurements(this.getSortedMeasurements(), this.sortState);
+      this.view.renderMeasurements(this.getSortedMeasurements(), this.sortState, {
+        canDelete: this.model.canDeleteMeasurements(),
+      });
     }
 
     getChronologicalMeasurements() {

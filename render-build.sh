@@ -5,6 +5,20 @@ rm -rf dist
 mkdir -p dist
 cp -R outputs/. dist/
 
-if [[ -n "${KAKAO_MAP_API_KEY:-}" ]]; then
-  sed -i "s/window.KAKAO_MAP_API_KEY = \"\";/window.KAKAO_MAP_API_KEY = \"${KAKAO_MAP_API_KEY}\";/" dist/index.html
-fi
+replace_config() {
+  local name="$1"
+  local value="$2"
+
+  if [[ -z "$value" ]]; then
+    return
+  fi
+
+  local escaped
+  escaped="$(printf '%s' "$value" | sed -e 's/[\/&|\\]/\\&/g')"
+  sed -i "s|window.${name} = \"[^\"]*\";|window.${name} = \"${escaped}\";|" dist/index.html
+}
+
+replace_config "KAKAO_MAP_API_KEY" "${KAKAO_MAP_API_KEY:-}"
+replace_config "SUPABASE_URL" "${SUPABASE_URL:-}"
+replace_config "SUPABASE_PUBLISHABLE_KEY" "${SUPABASE_PUBLISHABLE_KEY:-${SUPABASE_ANON_KEY:-}}"
+replace_config "SURVEY_SESSION_CODE" "${SURVEY_SESSION_CODE:-}"

@@ -12,7 +12,15 @@
       // 카카오맵 API 키 입력 위치:
       // 아래 빈 문자열에 카카오 개발자센터에서 발급받은 JavaScript 키를 넣으면 실제 지도가 로드됩니다.
       window.KAKAO_MAP_API_KEY = "";
+
+      // Supabase 입력 위치:
+      // Render 환경변수 SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY가 빌드 시 자동 주입됩니다.
+      // service_role/secret key는 절대 브라우저 앱에 넣지 마세요.
+      window.SUPABASE_URL = "";
+      window.SUPABASE_PUBLISHABLE_KEY = "";
+      window.SURVEY_SESSION_CODE = "default";
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
     <div class="app-shell">
@@ -21,9 +29,15 @@
           <p class="app-label">측량 수업 실험 도구</p>
           <h1>GPS 측량 오차 분석</h1>
         </div>
-        <div class="header-status">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span id="locationStatus">현재 위치 확인 중</span>
+        <div class="header-actions">
+          <div class="header-status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="locationStatus">현재 위치 확인 중</span>
+          </div>
+          <div id="syncStatus" class="header-status sync-status">
+            <span class="status-dot sync-dot" aria-hidden="true"></span>
+            <span>로컬 저장소</span>
+          </div>
         </div>
       </header>
 

@@ -37,6 +37,7 @@
       this.mapElement = document.getElementById("map");
       this.mapStatus = document.getElementById("mapStatus");
       this.locationStatus = document.getElementById("locationStatus");
+      this.syncStatus = document.getElementById("syncStatus");
       this.gpsAccuracy = document.getElementById("gpsAccuracy");
       this.currentLocationText = document.getElementById("currentLocationText");
       this.endLocationText = document.getElementById("endLocationText");
@@ -300,7 +301,15 @@
       this.maxAbsoluteMetric.textContent = formatMeters(summary.maxAbsoluteError);
     }
 
-    renderMeasurements(measurements, sortState) {
+    renderSyncStatus(status) {
+      this.syncStatus.classList.toggle("is-online", status.mode === "supabase");
+      this.syncStatus.classList.toggle("is-error", status.mode === "error");
+      this.syncStatus.querySelector("span:last-child").textContent = status.label;
+      this.syncStatus.title = status.detail || "";
+    }
+
+    renderMeasurements(measurements, sortState, options = {}) {
+      const canDelete = options.canDelete !== false;
       this.sortStatus.textContent = this.getSortStatus(sortState);
 
       document.querySelectorAll(".sort-button").forEach((button) => {
@@ -327,9 +336,13 @@
               <td>${Number(item.absoluteError).toFixed(2)}</td>
               <td class="${Number(item.relativeError) >= 10 ? "error-text" : ""}">${Number(item.relativeError).toFixed(2)}</td>
               <td>
-                <button class="icon-button" type="button" data-action="delete" data-id="${item.id}" aria-label="측정 데이터 삭제">
-                  <i data-lucide="trash-2" aria-hidden="true"></i>
-                </button>
+                ${
+                  canDelete
+                    ? `<button class="icon-button" type="button" data-action="delete" data-id="${item.id}" aria-label="측정 데이터 삭제">
+                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                      </button>`
+                    : '<span class="read-only-chip">DB 보관</span>'
+                }
               </td>
             </tr>
           `

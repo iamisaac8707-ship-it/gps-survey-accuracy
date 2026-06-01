@@ -85,6 +85,14 @@ h2 {
   line-height: 1.25;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .header-status,
 .map-status,
 .sort-status {
@@ -108,6 +116,21 @@ h2 {
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.sync-dot {
+  background: var(--amber);
+  box-shadow: 0 0 0 4px var(--amber-soft);
+}
+
+.sync-status.is-online .sync-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.sync-status.is-error .sync-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 4px var(--danger-soft);
 }
 
 .workspace-grid {
@@ -478,6 +501,20 @@ tbody tr:hover td {
   height: 16px;
 }
 
+.read-only-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .fallback-layer {
   position: absolute;
   inset: 0;
@@ -559,6 +596,10 @@ tbody tr:hover td {
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
   }
 
   h1 {
