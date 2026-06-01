@@ -1,3 +1,4 @@
+const SPREADSHEET_ID = "";
 const SHEET_NAME = "measurements";
 
 const HEADERS = [
@@ -25,7 +26,7 @@ function doPost(e) {
 
   try {
     const sheet = getOrCreateSheet_();
-    const payload = JSON.parse(e.postData.contents || "{}");
+    const payload = parsePayload_(e);
 
     sheet.appendRow([
       new Date(),
@@ -58,8 +59,19 @@ function doGet() {
   return json_({ ok: true, message: "GPS survey sheet endpoint is running." });
 }
 
+function setup() {
+  getOrCreateSheet_();
+}
+
 function getOrCreateSheet_() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const spreadsheet = SPREADSHEET_ID
+    ? SpreadsheetApp.openById(SPREADSHEET_ID)
+    : SpreadsheetApp.getActiveSpreadsheet();
+
+  if (!spreadsheet) {
+    throw new Error("No active spreadsheet. Open Apps Script from the Google Sheet, or set SPREADSHEET_ID.");
+  }
+
   const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
 
   if (sheet.getLastRow() === 0) {
@@ -68,6 +80,18 @@ function getOrCreateSheet_() {
   }
 
   return sheet;
+}
+
+function parsePayload_(e) {
+  if (e && e.parameter && e.parameter.payload) {
+    return JSON.parse(e.parameter.payload);
+  }
+
+  if (e && e.postData && e.postData.contents) {
+    return JSON.parse(e.postData.contents);
+  }
+
+  return {};
 }
 
 function json_(value) {

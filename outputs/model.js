@@ -285,7 +285,7 @@
       };
     }
 
-    async sendToGoogleSheets(measurement) {
+    sendToGoogleSheets(measurement) {
       const payload = {
         sessionCode: this.sessionCode,
         clientId: this.clientId,
@@ -304,20 +304,61 @@
         gpsAccuracy: measurement.gpsAccuracy,
       };
 
-      try {
-        await fetch(this.googleSheetsUrl, {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          body: JSON.stringify(payload),
+      return this.submitGoogleSheetsForm(payload);
+    }
+
+    submitGoogleSheetsForm(payload) {
+      return new Promise((resolve, reject) => {
+        const frameName = `sheets-submit-${Date.now()}`;
+        const iframe = document.createElement("iframe");
+        const form = document.createElement("form");
+        const input = document.createElement("input");
+        let resolved = false;
+
+        iframe.name = frameName;
+        iframe.className = "is-hidden";
+        form.className = "is-hidden";
+        form.method = "POST";
+        form.action = this.googleSheetsUrl;
+        form.target = frameName;
+        input.type = "hidden";
+        input.name = "payload";
+        input.value = JSON.stringify(payload);
+
+        form.appendChild(input);
+        document.body.append(iframe, form);
+
+        const cleanup = () => {
+          setTimeout(() => {
+            iframe.remove();
+            form.remove();
+          }, 500);
+        };
+
+        iframe.addEventListener("load", () => {
+          if (resolved) return;
+          resolved = true;
+          cleanup();
+          resolve();
         });
-      } catch (error) {
-        this.persistenceMode = "error";
-        this.persistenceError = error.message;
-        throw new Error(`Google Sheets 저장 실패: ${error.message}`);
-      }
+
+        setTimeout(() => {
+          if (resolved) return;
+          resolved = true;
+          cleanup();
+          resolve();
+        }, 2500);
+
+        try {
+          form.submit();
+        } catch (error) {
+          resolved = true;
+          cleanup();
+          this.persistenceMode = "error";
+          this.persistenceError = error.message;
+          reject(new Error(`Google Sheets 저장 실패: ${error.message}`));
+        }
+      });
     }
 
     fromSupabaseRow(row) {
