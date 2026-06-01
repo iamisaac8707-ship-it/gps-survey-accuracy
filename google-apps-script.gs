@@ -2,22 +2,22 @@ const SPREADSHEET_ID = "";
 const SHEET_NAME = "measurements";
 
 const HEADERS = [
-  "saved_at",
-  "session_code",
-  "client_id",
-  "client_measurement_id",
-  "timestamp",
-  "start_lat",
-  "start_lng",
-  "end_lat",
-  "end_lng",
-  "gps_distance_m",
-  "actual_distance_m",
-  "absolute_error_m",
-  "relative_error_percent",
-  "environment",
-  "environment_key",
-  "gps_accuracy_m",
+  "저장일시",
+  "수업_세션",
+  "기기_ID",
+  "측정_ID",
+  "측정일시",
+  "출발_위도",
+  "출발_경도",
+  "목적지_위도",
+  "목적지_경도",
+  "GPS_직선거리_m",
+  "실제_측량값_m",
+  "절대_오차_m",
+  "상대_오차율_%",
+  "주변_환경",
+  "환경_코드",
+  "GPS_정확도_m",
 ];
 
 function doPost(e) {
