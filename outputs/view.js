@@ -56,6 +56,7 @@
       this.pointPicker = document.getElementById("pointPicker");
       this.pointTargetGroup = document.getElementById("pointTargetGroup");
       this.modeHelpText = document.getElementById("modeHelpText");
+      this.manualStepFlow = document.getElementById("manualStepFlow");
       this.tableBody = document.getElementById("measurementTableBody");
       this.sortStatus = document.getElementById("sortStatus");
       this.relativeErrorCanvas = document.getElementById("relativeErrorChart");
@@ -65,6 +66,8 @@
       this.kakaoCurrentMarker = null;
       this.kakaoEndMarker = null;
       this.kakaoPolyline = null;
+      this.kakaoStartLabel = null;
+      this.kakaoEndLabel = null;
       this.mapMode = "pending";
       this.destinationHandler = null;
       this.fallbackCenterLocation = DEFAULT_LOCATION;
@@ -242,6 +245,7 @@
       if (!currentLocation) {
         if (this.kakaoCurrentMarker) this.kakaoCurrentMarker.setMap(null);
         if (this.kakaoPolyline) this.kakaoPolyline.setMap(null);
+        if (this.kakaoStartLabel) this.kakaoStartLabel.setMap(null);
 
         if (endLocation) {
           const endLatLng = new window.kakao.maps.LatLng(endLocation.lat, endLocation.lng);
@@ -250,6 +254,10 @@
           }
           this.kakaoEndMarker.setMap(this.kakaoMap);
           this.kakaoEndMarker.setPosition(endLatLng);
+          this.updateKakaoLabel("end", endLatLng, "측정");
+        } else {
+          if (this.kakaoEndMarker) this.kakaoEndMarker.setMap(null);
+          if (this.kakaoEndLabel) this.kakaoEndLabel.setMap(null);
         }
         return;
       }
@@ -260,6 +268,7 @@
       }
       this.kakaoCurrentMarker.setMap(this.kakaoMap);
       this.kakaoCurrentMarker.setPosition(currentLatLng);
+      this.updateKakaoLabel("start", currentLatLng, "시작");
       if (measurementMode !== "manual") {
         this.kakaoMap.setCenter(currentLatLng);
       }
@@ -271,6 +280,7 @@
         }
         this.kakaoEndMarker.setMap(this.kakaoMap);
         this.kakaoEndMarker.setPosition(endLatLng);
+        this.updateKakaoLabel("end", endLatLng, "측정");
 
         if (!this.kakaoPolyline) {
           this.kakaoPolyline = new window.kakao.maps.Polyline({
@@ -291,7 +301,29 @@
       } else {
         if (this.kakaoEndMarker) this.kakaoEndMarker.setMap(null);
         if (this.kakaoPolyline) this.kakaoPolyline.setMap(null);
+        if (this.kakaoEndLabel) this.kakaoEndLabel.setMap(null);
       }
+    }
+
+    updateKakaoLabel(kind, position, text) {
+      if (!window.kakao?.maps?.CustomOverlay) return;
+
+      const property = kind === "start" ? "kakaoStartLabel" : "kakaoEndLabel";
+      const className = kind === "start" ? "start" : "end";
+      const content = `<div class="kakao-marker-label ${className}">${text}</div>`;
+
+      if (!this[property]) {
+        this[property] = new window.kakao.maps.CustomOverlay({
+          content,
+          yAnchor: 2.55,
+          zIndex: 5,
+        });
+      } else {
+        this[property].setContent(content);
+      }
+
+      this[property].setPosition(position);
+      this[property].setMap(this.kakaoMap);
     }
 
     updateFallbackMap(currentLocation, endLocation) {
@@ -352,12 +384,18 @@
         button.classList.toggle("is-active", button.dataset.point === activePoint);
       });
 
+      this.manualStepFlow.querySelectorAll("[data-step]").forEach((step) => {
+        const isStart = step.dataset.step === "start";
+        step.classList.toggle("is-active", isManual && step.dataset.step === activePoint);
+        step.classList.toggle("is-done", isManual && activePoint === "end" && isStart);
+      });
+
       this.pointPicker.classList.toggle("is-hidden", !isManual);
       this.startLocationLabel.textContent = isManual ? "시작점 좌표" : "현재 좌표";
       this.modeHelpText.textContent = isManual
         ? activePoint === "start"
-          ? "지도에서 시작점을 클릭하세요. 선택 후 측정점 선택으로 자동 전환됩니다."
-          : "지도에서 측정점을 클릭하면 두 지점 사이의 직선거리를 계산합니다."
+          ? "1단계: 지도에서 시작점을 클릭하세요. 시작점이 찍히면 2단계로 넘어갑니다."
+          : "2단계: 지도에서 측정점을 클릭하세요. 두 점 사이의 직선거리를 계산합니다."
         : "지도를 클릭하면 현재 위치에서 측정점까지의 거리를 계산합니다.";
     }
 

@@ -19,10 +19,10 @@ services:
         value: no-cache
       - path: /*.css
         name: Cache-Control
-        value: public, max-age=86400
+        value: no-cache
       - path: /*.js
         name: Cache-Control
-        value: public, max-age=86400
+        value: no-cache
     envVars:
       - key: KAKAO_MAP_API_KEY
         sync: false

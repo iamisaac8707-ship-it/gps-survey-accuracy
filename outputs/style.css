@@ -388,6 +388,56 @@ select:focus {
   padding-top: 2px;
 }
 
+.step-flow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.step-flow span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.step-flow strong {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.step-flow span.is-active {
+  border-style: solid;
+  border-color: rgba(15, 159, 143, 0.55);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.step-flow span.is-active strong,
+.step-flow span.is-done strong {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.step-flow span.is-done {
+  border-style: solid;
+  border-color: rgba(15, 159, 143, 0.28);
+  color: var(--accent-dark);
+}
+
 .mode-help {
   margin: 0;
   padding: 11px 12px;
@@ -656,6 +706,27 @@ tbody tr:hover td {
   font-weight: 900;
   white-space: nowrap;
   box-shadow: 0 8px 18px rgba(31, 42, 50, 0.12);
+}
+
+.kakao-marker-label {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(31, 42, 50, 0.16);
+}
+
+.kakao-marker-label.start {
+  color: var(--blue);
+}
+
+.kakao-marker-label.end {
+  color: var(--danger);
 }
 
 .fallback-line {

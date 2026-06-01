@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GPS 측량 오차 분석</title>
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./style.css?v=20260601-two-point-ui2" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
@@ -112,6 +112,10 @@
                     <i data-lucide="map-pin" aria-hidden="true"></i>
                     <span>측정점</span>
                   </button>
+                </div>
+                <div id="manualStepFlow" class="step-flow" aria-label="두 지점 선택 순서">
+                  <span data-step="start" class="is-active"><strong>1</strong> 시작점 클릭</span>
+                  <span data-step="end"><strong>2</strong> 측정점 클릭</span>
                 </div>
               </div>
               <p id="modeHelpText" class="mode-help">지도를 클릭하면 현재 위치에서 측정점까지의 거리를 계산합니다.</p>
@@ -229,8 +233,8 @@
       </main>
     </div>
 
-    <script src="./model.js" defer></script>
-    <script src="./view.js" defer></script>
-    <script src="./controller.js" defer></script>
+    <script src="./model.js?v=20260601-two-point-ui2" defer></script>
+    <script src="./view.js?v=20260601-two-point-ui2" defer></script>
+    <script src="./controller.js?v=20260601-two-point-ui2" defer></script>
   </body>
 </html>
