@@ -17,7 +17,6 @@ const HEADERS = [
   "상대_오차율_%",
   "주변_환경",
   "환경_코드",
-  "측정_방식",
   "GPS_정확도_m",
 ];
 
@@ -45,7 +44,6 @@ function doPost(e) {
       payload.relativeError || "",
       payload.environment || "",
       payload.environmentKey || "",
-      payload.measurementMode === "manual" ? "두 지점 선택" : "현재 위치 기준",
       payload.gpsAccuracy || "",
     ]);
 
