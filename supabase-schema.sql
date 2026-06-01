@@ -19,10 +19,14 @@ create table if not exists public.survey_measurements (
   relative_error_percent numeric(12, 2) not null check (relative_error_percent >= 0),
   environment text not null,
   environment_key text not null,
+  measurement_mode text not null default 'gps',
   gps_accuracy_m numeric(12, 2),
   recorded_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
+
+alter table public.survey_measurements
+  add column if not exists measurement_mode text not null default 'gps';
 
 create index if not exists survey_measurements_session_recorded_idx
   on public.survey_measurements (session_code, recorded_at desc);

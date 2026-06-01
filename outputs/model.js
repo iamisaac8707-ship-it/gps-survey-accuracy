@@ -36,6 +36,9 @@
       this.supabaseClient = this.createSupabaseClient();
       this.persistenceMode = this.googleSheetsUrl ? "sheets" : this.supabaseClient ? "supabase" : "local";
       this.persistenceError = null;
+      this.measurementMode = "gps";
+      this.gpsLocation = null;
+      this.manualStartLocation = null;
       this.currentLocation = null;
       this.gpsAccuracy = null;
       this.endLocation = null;
@@ -84,13 +87,40 @@
     }
 
     setCurrentLocation(location) {
-      this.currentLocation = {
+      this.gpsLocation = {
         lat: Number(location.lat),
         lng: Number(location.lng),
       };
       this.gpsAccuracy = Number.isFinite(Number(location.accuracy))
         ? roundToTwo(Number(location.accuracy))
         : null;
+      if (this.measurementMode === "gps") {
+        this.currentLocation = { ...this.gpsLocation };
+      }
+      this.recalculateGpsDistance();
+      return this.gpsLocation;
+    }
+
+    setMeasurementMode(mode) {
+      this.measurementMode = mode === "manual" ? "manual" : "gps";
+      this.currentLocation =
+        this.measurementMode === "manual"
+          ? this.manualStartLocation
+            ? { ...this.manualStartLocation }
+            : null
+          : this.gpsLocation
+            ? { ...this.gpsLocation }
+            : null;
+      this.recalculateGpsDistance();
+      return this.measurementMode;
+    }
+
+    setManualStartLocation(location) {
+      this.manualStartLocation = {
+        lat: Number(location.lat),
+        lng: Number(location.lng),
+      };
+      this.currentLocation = { ...this.manualStartLocation };
       this.recalculateGpsDistance();
       return this.currentLocation;
     }
@@ -161,6 +191,7 @@
         environment: environmentMeta.label,
         environmentKey: environmentMeta.value,
         gpsAccuracy: this.gpsAccuracy,
+        measurementMode: this.measurementMode,
         timestamp: new Date().toISOString(),
       };
     }
@@ -281,6 +312,7 @@
         environment: measurement.environment,
         environment_key: measurement.environmentKey,
         gps_accuracy_m: measurement.gpsAccuracy,
+        measurement_mode: measurement.measurementMode,
         recorded_at: measurement.timestamp,
       };
     }
@@ -302,6 +334,7 @@
         environment: measurement.environment,
         environmentKey: measurement.environmentKey,
         gpsAccuracy: measurement.gpsAccuracy,
+        measurementMode: measurement.measurementMode,
       };
 
       return this.submitGoogleSheetsForm(payload);
@@ -378,6 +411,7 @@
         relativeError: roundToTwo(Number(row.relative_error_percent)),
         environment: row.environment,
         environmentKey: row.environment_key,
+        measurementMode: row.measurement_mode || "gps",
         gpsAccuracy:
           row.gps_accuracy_m === null || row.gps_accuracy_m === undefined
             ? null
@@ -456,6 +490,7 @@
         "absolute_error_m",
         "relative_error_percent",
         "environment",
+        "measurement_mode",
         "gps_accuracy_m",
       ];
 
@@ -471,6 +506,7 @@
         item.absoluteError,
         item.relativeError,
         item.environment,
+        item.measurementMode || "gps",
         item.gpsAccuracy ?? "",
       ]);
 

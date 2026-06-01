@@ -21,6 +21,7 @@
         key: "timestamp",
         direction: "desc",
       };
+      this.activePoint = "end";
       this.watchId = null;
     }
 
@@ -28,6 +29,10 @@
       this.view.renderEnvironmentOptions(window.MeasurementConstants.ENVIRONMENTS);
       this.bindEvents();
       await this.view.initMap((location) => this.handleDestinationSelect(location));
+      this.view.renderMeasurementMode({
+        mode: this.model.measurementMode,
+        activePoint: this.activePoint,
+      });
       const persistenceStatus = await this.model.initializePersistence();
       this.view.renderSyncStatus(persistenceStatus);
       this.renderAll();
@@ -40,6 +45,8 @@
       this.view.bindRefreshLocation(() => this.requestCurrentLocation());
       this.view.bindSaveMeasurement(() => this.handleSaveMeasurement());
       this.view.bindDownloadCsv(() => this.handleCsvDownload());
+      this.view.bindMeasurementModeChange((mode) => this.handleMeasurementModeChange(mode));
+      this.view.bindPointTargetChange((point) => this.handlePointTargetChange(point));
       this.view.bindTableActions({
         onDelete: (id) => this.handleDeleteMeasurement(id),
         onSort: (key) => this.handleSortChange(key),
@@ -105,9 +112,42 @@
       this.updateLocationViews();
     }
 
+    handleMeasurementModeChange(mode) {
+      this.model.setMeasurementMode(mode);
+      this.activePoint = mode === "manual" ? "start" : "end";
+      this.view.renderMeasurementMode({
+        mode: this.model.measurementMode,
+        activePoint: this.activePoint,
+      });
+      this.updateLocationViews();
+    }
+
+    handlePointTargetChange(point) {
+      this.activePoint = point === "start" ? "start" : "end";
+      this.view.renderMeasurementMode({
+        mode: this.model.measurementMode,
+        activePoint: this.activePoint,
+      });
+    }
+
     handleDestinationSelect(location) {
+      if (this.model.measurementMode === "manual" && this.activePoint === "start") {
+        this.model.setManualStartLocation(location);
+        this.activePoint = "end";
+        this.view.renderMeasurementMode({
+          mode: this.model.measurementMode,
+          activePoint: this.activePoint,
+        });
+        this.updateLocationViews();
+        return;
+      }
+
       if (!this.model.currentLocation) {
-        this.view.showAlert("현재 위치를 먼저 확인하세요.");
+        this.view.showAlert(
+          this.model.measurementMode === "manual"
+            ? "지도에서 시작점을 먼저 선택하세요."
+            : "현재 위치를 먼저 확인하세요."
+        );
         return;
       }
 
@@ -118,8 +158,17 @@
     async handleSaveMeasurement() {
       const formData = this.view.getFormData();
 
+      if (!this.model.currentLocation) {
+        this.view.showAlert(
+          this.model.measurementMode === "manual"
+            ? "지도에서 시작점을 먼저 선택하세요."
+            : "현재 위치를 먼저 확인하세요."
+        );
+        return;
+      }
+
       if (!this.model.endLocation) {
-        this.view.showAlert("지도에서 목적지를 먼저 선택하세요.");
+        this.view.showAlert("지도에서 측정점을 먼저 선택하세요.");
         return;
       }
 

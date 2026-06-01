@@ -39,6 +39,7 @@
       this.locationStatus = document.getElementById("locationStatus");
       this.syncStatus = document.getElementById("syncStatus");
       this.gpsAccuracy = document.getElementById("gpsAccuracy");
+      this.startLocationLabel = document.getElementById("startLocationLabel");
       this.currentLocationText = document.getElementById("currentLocationText");
       this.endLocationText = document.getElementById("endLocationText");
       this.gpsDistanceText = document.getElementById("gpsDistanceText");
@@ -51,6 +52,10 @@
       this.measurementForm = document.getElementById("measurementForm");
       this.refreshLocationBtn = document.getElementById("refreshLocationBtn");
       this.downloadCsvBtn = document.getElementById("downloadCsvBtn");
+      this.measurementModeGroup = document.getElementById("measurementModeGroup");
+      this.pointPicker = document.getElementById("pointPicker");
+      this.pointTargetGroup = document.getElementById("pointTargetGroup");
+      this.modeHelpText = document.getElementById("modeHelpText");
       this.tableBody = document.getElementById("measurementTableBody");
       this.sortStatus = document.getElementById("sortStatus");
       this.relativeErrorCanvas = document.getElementById("relativeErrorChart");
@@ -79,6 +84,22 @@
 
     bindDownloadCsv(handler) {
       this.downloadCsvBtn.addEventListener("click", handler);
+    }
+
+    bindMeasurementModeChange(handler) {
+      this.measurementModeGroup.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-mode]");
+        if (!button) return;
+        handler(button.dataset.mode);
+      });
+    }
+
+    bindPointTargetChange(handler) {
+      this.pointTargetGroup.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-point]");
+        if (!button) return;
+        handler(button.dataset.point);
+      });
     }
 
     bindTableActions({ onDelete, onSort }) {
@@ -182,7 +203,7 @@
         </svg>
         <div id="fallbackCurrentMarker" class="fallback-marker current is-hidden" aria-hidden="true"></div>
         <div id="fallbackEndMarker" class="fallback-marker destination is-hidden" aria-hidden="true"></div>
-        <div class="fallback-grid-label">카카오맵 API 키를 넣으면 실제 지도가 표시됩니다. 현재는 클릭 가능한 데모 격자로 목적지를 선택합니다.</div>
+        <div class="fallback-grid-label">카카오맵 API 키를 넣으면 실제 지도가 표시됩니다. 현재는 클릭 가능한 데모 격자로 시작점과 측정점을 선택합니다.</div>
       `;
       this.fallbackLine = document.getElementById("fallbackLine");
       this.fallbackCurrentMarker = document.getElementById("fallbackCurrentMarker");
@@ -203,7 +224,7 @@
     updateMap({ currentLocation, endLocation }) {
       this.lastCurrentLocation = currentLocation;
 
-      if (this.mapMode === "kakao" && this.kakaoMap && currentLocation) {
+      if (this.mapMode === "kakao" && this.kakaoMap) {
         this.updateKakaoMap(currentLocation, endLocation);
         return;
       }
@@ -214,10 +235,26 @@
     }
 
     updateKakaoMap(currentLocation, endLocation) {
+      if (!currentLocation) {
+        if (this.kakaoCurrentMarker) this.kakaoCurrentMarker.setMap(null);
+        if (this.kakaoPolyline) this.kakaoPolyline.setMap(null);
+
+        if (endLocation) {
+          const endLatLng = new window.kakao.maps.LatLng(endLocation.lat, endLocation.lng);
+          if (!this.kakaoEndMarker) {
+            this.kakaoEndMarker = new window.kakao.maps.Marker({ map: this.kakaoMap });
+          }
+          this.kakaoEndMarker.setMap(this.kakaoMap);
+          this.kakaoEndMarker.setPosition(endLatLng);
+        }
+        return;
+      }
+
       const currentLatLng = new window.kakao.maps.LatLng(currentLocation.lat, currentLocation.lng);
       if (!this.kakaoCurrentMarker) {
         this.kakaoCurrentMarker = new window.kakao.maps.Marker({ map: this.kakaoMap });
       }
+      this.kakaoCurrentMarker.setMap(this.kakaoMap);
       this.kakaoCurrentMarker.setPosition(currentLatLng);
       this.kakaoMap.setCenter(currentLatLng);
 
@@ -226,6 +263,7 @@
         if (!this.kakaoEndMarker) {
           this.kakaoEndMarker = new window.kakao.maps.Marker({ map: this.kakaoMap });
         }
+        this.kakaoEndMarker.setMap(this.kakaoMap);
         this.kakaoEndMarker.setPosition(endLatLng);
 
         if (!this.kakaoPolyline) {
@@ -237,17 +275,31 @@
             strokeStyle: "shortdash",
           });
         }
+        this.kakaoPolyline.setMap(this.kakaoMap);
         this.kakaoPolyline.setPath([currentLatLng, endLatLng]);
 
         const bounds = new window.kakao.maps.LatLngBounds();
         bounds.extend(currentLatLng);
         bounds.extend(endLatLng);
         this.kakaoMap.setBounds(bounds, 42, 42, 42, 42);
+      } else {
+        if (this.kakaoEndMarker) this.kakaoEndMarker.setMap(null);
+        if (this.kakaoPolyline) this.kakaoPolyline.setMap(null);
       }
     }
 
     updateFallbackMap(currentLocation, endLocation) {
       if (!this.fallbackCurrentMarker || !this.fallbackEndMarker || !this.fallbackLine) return;
+
+      if (!currentLocation) {
+        this.fallbackCurrentMarker.classList.add("is-hidden");
+        this.fallbackEndMarker.classList.add("is-hidden");
+        this.fallbackLine.setAttribute("x1", "50");
+        this.fallbackLine.setAttribute("y1", "50");
+        this.fallbackLine.setAttribute("x2", "50");
+        this.fallbackLine.setAttribute("y2", "50");
+        return;
+      }
 
       if (currentLocation) {
         this.fallbackCurrentMarker.classList.remove("is-hidden");
@@ -271,6 +323,26 @@
       this.fallbackLine.setAttribute("y1", "50");
       this.fallbackLine.setAttribute("x2", String(x));
       this.fallbackLine.setAttribute("y2", String(y));
+    }
+
+    renderMeasurementMode({ mode, activePoint }) {
+      const isManual = mode === "manual";
+
+      this.measurementModeGroup.querySelectorAll("[data-mode]").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.mode === mode);
+      });
+
+      this.pointTargetGroup.querySelectorAll("[data-point]").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.point === activePoint);
+      });
+
+      this.pointPicker.classList.toggle("is-hidden", !isManual);
+      this.startLocationLabel.textContent = isManual ? "시작점 좌표" : "현재 좌표";
+      this.modeHelpText.textContent = isManual
+        ? activePoint === "start"
+          ? "지도에서 시작점을 클릭하세요. 선택 후 측정점 선택으로 자동 전환됩니다."
+          : "지도에서 측정점을 클릭하면 두 지점 사이의 직선거리를 계산합니다."
+        : "지도를 클릭하면 현재 위치에서 측정점까지의 거리를 계산합니다.";
     }
 
     renderLocation({ currentLocation, endLocation, gpsDistance }) {
