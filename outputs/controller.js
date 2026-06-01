@@ -231,6 +231,8 @@
       this.view.updateMap({
         currentLocation: this.model.currentLocation,
         endLocation: this.model.endLocation,
+        gpsLocation: this.model.gpsLocation,
+        measurementMode: this.model.measurementMode,
       });
     }
 

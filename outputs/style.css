@@ -318,59 +318,80 @@ select:focus {
 
 .mode-section {
   display: grid;
-  gap: 9px;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(15, 159, 143, 0.18);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #ffffff 0%, #f5fbfa 100%);
 }
 
 .segmented-control {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  min-height: 42px;
-  padding: 4px;
-  border: 1px solid var(--border-strong);
+  gap: 8px;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
   border-radius: var(--radius);
-  background: var(--surface-soft);
+  background: transparent;
 }
 
 .segmented-control button {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
+  justify-content: flex-start;
+  gap: 8px;
   min-width: 0;
-  min-height: 34px;
-  padding: 7px 9px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
+  min-height: 52px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #ffffff;
   color: var(--muted);
   font-size: 13px;
   font-weight: 900;
   line-height: 1.2;
+  box-shadow: 0 8px 18px rgba(31, 42, 50, 0.04);
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.segmented-control button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(15, 159, 143, 0.28);
 }
 
 .segmented-control button.is-active {
-  border-color: rgba(15, 159, 143, 0.22);
-  background: #ffffff;
+  border-color: rgba(15, 159, 143, 0.72);
+  background: var(--accent-soft);
   color: var(--accent-dark);
-  box-shadow: 0 8px 16px rgba(31, 42, 50, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(15, 159, 143, 0.18), 0 10px 20px rgba(15, 159, 143, 0.1);
 }
 
 .segmented-control svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
+  padding: 2px;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+.segmented-control button.is-active svg {
+  background: var(--accent);
+  color: #ffffff;
 }
 
 .point-picker {
   display: grid;
   gap: 8px;
+  padding-top: 2px;
 }
 
 .mode-help {
   margin: 0;
-  padding: 10px 12px;
-  border: 1px solid rgba(15, 159, 143, 0.18);
+  padding: 11px 12px;
+  border: 1px solid rgba(15, 159, 143, 0.22);
   border-radius: var(--radius);
   background: var(--accent-soft);
   color: var(--accent-dark);
@@ -605,8 +626,8 @@ tbody tr:hover td {
 .fallback-marker {
   position: absolute;
   z-index: 2;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border: 3px solid #ffffff;
   border-radius: 50%;
   box-shadow: 0 5px 14px rgba(31, 42, 50, 0.24);
@@ -619,6 +640,22 @@ tbody tr:hover td {
 
 .fallback-marker.destination {
   background: var(--danger);
+}
+
+.fallback-marker span {
+  position: absolute;
+  left: 50%;
+  top: -31px;
+  transform: translateX(-50%);
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(31, 42, 50, 0.12);
 }
 
 .fallback-line {

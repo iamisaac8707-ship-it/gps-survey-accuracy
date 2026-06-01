@@ -67,6 +67,7 @@
       this.kakaoPolyline = null;
       this.mapMode = "pending";
       this.destinationHandler = null;
+      this.fallbackCenterLocation = DEFAULT_LOCATION;
       this.relativeErrorChart = null;
       this.environmentErrorChart = null;
     }
@@ -201,8 +202,8 @@
         <svg class="fallback-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           <line id="fallbackLine" x1="50" y1="50" x2="50" y2="50"></line>
         </svg>
-        <div id="fallbackCurrentMarker" class="fallback-marker current is-hidden" aria-hidden="true"></div>
-        <div id="fallbackEndMarker" class="fallback-marker destination is-hidden" aria-hidden="true"></div>
+        <div id="fallbackCurrentMarker" class="fallback-marker current is-hidden" aria-hidden="true"><span>시작</span></div>
+        <div id="fallbackEndMarker" class="fallback-marker destination is-hidden" aria-hidden="true"><span>측정</span></div>
         <div class="fallback-grid-label">카카오맵 API 키를 넣으면 실제 지도가 표시됩니다. 현재는 클릭 가능한 데모 격자로 시작점과 측정점을 선택합니다.</div>
       `;
       this.fallbackLine = document.getElementById("fallbackLine");
@@ -213,7 +214,7 @@
         const rect = this.mapElement.getBoundingClientRect();
         const xRatio = (event.clientX - rect.left) / rect.width;
         const yRatio = (event.clientY - rect.top) / rect.height;
-        const currentLocation = this.lastCurrentLocation || DEFAULT_LOCATION;
+        const currentLocation = this.fallbackCenterLocation || DEFAULT_LOCATION;
         this.destinationHandler({
           lat: currentLocation.lat + (0.5 - yRatio) * FALLBACK_MAP_SPAN,
           lng: currentLocation.lng + (xRatio - 0.5) * FALLBACK_MAP_SPAN,
@@ -221,11 +222,14 @@
       });
     }
 
-    updateMap({ currentLocation, endLocation }) {
+    updateMap({ currentLocation, endLocation, measurementMode, gpsLocation }) {
       this.lastCurrentLocation = currentLocation;
+      if (this.mapMode === "fallback" && measurementMode !== "manual" && (gpsLocation || currentLocation)) {
+        this.fallbackCenterLocation = gpsLocation || currentLocation;
+      }
 
       if (this.mapMode === "kakao" && this.kakaoMap) {
-        this.updateKakaoMap(currentLocation, endLocation);
+        this.updateKakaoMap(currentLocation, endLocation, measurementMode);
         return;
       }
 
@@ -234,7 +238,7 @@
       }
     }
 
-    updateKakaoMap(currentLocation, endLocation) {
+    updateKakaoMap(currentLocation, endLocation, measurementMode) {
       if (!currentLocation) {
         if (this.kakaoCurrentMarker) this.kakaoCurrentMarker.setMap(null);
         if (this.kakaoPolyline) this.kakaoPolyline.setMap(null);
@@ -256,7 +260,9 @@
       }
       this.kakaoCurrentMarker.setMap(this.kakaoMap);
       this.kakaoCurrentMarker.setPosition(currentLatLng);
-      this.kakaoMap.setCenter(currentLatLng);
+      if (measurementMode !== "manual") {
+        this.kakaoMap.setCenter(currentLatLng);
+      }
 
       if (endLocation) {
         const endLatLng = new window.kakao.maps.LatLng(endLocation.lat, endLocation.lng);
@@ -290,6 +296,8 @@
 
     updateFallbackMap(currentLocation, endLocation) {
       if (!this.fallbackCurrentMarker || !this.fallbackEndMarker || !this.fallbackLine) return;
+      const currentPoint = currentLocation ? this.getFallbackPoint(currentLocation) : null;
+      const endPoint = endLocation ? this.getFallbackPoint(endLocation) : null;
 
       if (!currentLocation) {
         this.fallbackCurrentMarker.classList.add("is-hidden");
@@ -303,26 +311,34 @@
 
       if (currentLocation) {
         this.fallbackCurrentMarker.classList.remove("is-hidden");
-        this.fallbackCurrentMarker.style.left = "50%";
-        this.fallbackCurrentMarker.style.top = "50%";
+        this.fallbackCurrentMarker.style.left = `${currentPoint.x}%`;
+        this.fallbackCurrentMarker.style.top = `${currentPoint.y}%`;
       }
 
       if (!currentLocation || !endLocation) {
         this.fallbackEndMarker.classList.add("is-hidden");
-        this.fallbackLine.setAttribute("x2", "50");
-        this.fallbackLine.setAttribute("y2", "50");
+        this.fallbackLine.setAttribute("x1", String(currentPoint?.x ?? 50));
+        this.fallbackLine.setAttribute("y1", String(currentPoint?.y ?? 50));
+        this.fallbackLine.setAttribute("x2", String(currentPoint?.x ?? 50));
+        this.fallbackLine.setAttribute("y2", String(currentPoint?.y ?? 50));
         return;
       }
 
-      const x = Math.max(5, Math.min(95, 50 + ((endLocation.lng - currentLocation.lng) / FALLBACK_MAP_SPAN) * 100));
-      const y = Math.max(5, Math.min(95, 50 - ((endLocation.lat - currentLocation.lat) / FALLBACK_MAP_SPAN) * 100));
       this.fallbackEndMarker.classList.remove("is-hidden");
-      this.fallbackEndMarker.style.left = `${x}%`;
-      this.fallbackEndMarker.style.top = `${y}%`;
-      this.fallbackLine.setAttribute("x1", "50");
-      this.fallbackLine.setAttribute("y1", "50");
-      this.fallbackLine.setAttribute("x2", String(x));
-      this.fallbackLine.setAttribute("y2", String(y));
+      this.fallbackEndMarker.style.left = `${endPoint.x}%`;
+      this.fallbackEndMarker.style.top = `${endPoint.y}%`;
+      this.fallbackLine.setAttribute("x1", String(currentPoint.x));
+      this.fallbackLine.setAttribute("y1", String(currentPoint.y));
+      this.fallbackLine.setAttribute("x2", String(endPoint.x));
+      this.fallbackLine.setAttribute("y2", String(endPoint.y));
+    }
+
+    getFallbackPoint(location) {
+      const center = this.fallbackCenterLocation || DEFAULT_LOCATION;
+      return {
+        x: Math.max(5, Math.min(95, 50 + ((location.lng - center.lng) / FALLBACK_MAP_SPAN) * 100)),
+        y: Math.max(5, Math.min(95, 50 - ((location.lat - center.lat) / FALLBACK_MAP_SPAN) * 100)),
+      };
     }
 
     renderMeasurementMode({ mode, activePoint }) {

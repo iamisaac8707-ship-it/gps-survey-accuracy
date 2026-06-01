@@ -103,6 +103,7 @@
 
     setMeasurementMode(mode) {
       this.measurementMode = mode === "manual" ? "manual" : "gps";
+      this.endLocation = null;
       this.currentLocation =
         this.measurementMode === "manual"
           ? this.manualStartLocation
@@ -121,6 +122,7 @@
         lng: Number(location.lng),
       };
       this.currentLocation = { ...this.manualStartLocation };
+      this.endLocation = null;
       this.recalculateGpsDistance();
       return this.currentLocation;
     }
