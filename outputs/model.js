@@ -342,58 +342,31 @@
       return this.submitGoogleSheetsForm(payload);
     }
 
-    submitGoogleSheetsForm(payload) {
-      return new Promise((resolve, reject) => {
-        const frameName = `sheets-submit-${Date.now()}`;
-        const iframe = document.createElement("iframe");
-        const form = document.createElement("form");
-        const input = document.createElement("input");
-        let resolved = false;
+    async submitGoogleSheetsForm(payload) {
+      const body = JSON.stringify(payload);
 
-        iframe.name = frameName;
-        iframe.className = "is-hidden";
-        form.className = "is-hidden";
-        form.method = "POST";
-        form.action = this.googleSheetsUrl;
-        form.target = frameName;
-        input.type = "hidden";
-        input.name = "payload";
-        input.value = JSON.stringify(payload);
-
-        form.appendChild(input);
-        document.body.append(iframe, form);
-
-        const cleanup = () => {
-          setTimeout(() => {
-            iframe.remove();
-            form.remove();
-          }, 500);
-        };
-
-        iframe.addEventListener("load", () => {
-          if (resolved) return;
-          resolved = true;
-          cleanup();
-          resolve();
+      try {
+        await fetch(this.googleSheetsUrl, {
+          method: "POST",
+          mode: "no-cors",
+          body,
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          keepalive: true,
         });
-
-        setTimeout(() => {
-          if (resolved) return;
-          resolved = true;
-          cleanup();
-          resolve();
-        }, 2500);
-
-        try {
-          form.submit();
-        } catch (error) {
-          resolved = true;
-          cleanup();
-          this.persistenceMode = "error";
-          this.persistenceError = error.message;
-          reject(new Error(`Google Sheets 저장 실패: ${error.message}`));
+      } catch (error) {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
+          if (navigator.sendBeacon(this.googleSheetsUrl, blob)) {
+            return;
+          }
         }
-      });
+
+        this.persistenceMode = "error";
+        this.persistenceError = error.message;
+        throw new Error(`Google Sheets 저장 실패: ${error.message}`);
+      }
     }
 
     fromSupabaseRow(row) {

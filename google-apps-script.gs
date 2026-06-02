@@ -94,10 +94,31 @@ function parsePayload_(e) {
   }
 
   if (e && e.postData && e.postData.contents) {
-    return JSON.parse(e.postData.contents);
+    const contents = e.postData.contents;
+    try {
+      return JSON.parse(contents);
+    } catch (error) {
+      const formPayload = parseFormEncoded_(contents).payload;
+      if (formPayload) {
+        return JSON.parse(formPayload);
+      }
+      throw error;
+    }
   }
 
   return {};
+}
+
+function parseFormEncoded_(contents) {
+  return contents.split("&").reduce((params, pair) => {
+    const parts = pair.split("=");
+    const key = decodeURIComponent((parts.shift() || "").replace(/\+/g, " "));
+    const value = decodeURIComponent(parts.join("=").replace(/\+/g, " "));
+    if (key) {
+      params[key] = value;
+    }
+    return params;
+  }, {});
 }
 
 function json_(value) {
